@@ -1,10 +1,55 @@
-﻿<h1>Spotify Web Playback SDK Quick Start Tutorial</h1>
-  <h2>Open your console log: <code>View > Developer > JavaScript Console</code></h2>
-
+﻿<h1>Spotify Web Playback SDK</h1>
+  <input type ="text" placeholder="1 2 3.." id="txtSearch" />
+  <input type ="button" value="Search" id="btnSearch"/>
   <script src="https://sdk.scdn.co/spotify-player.js"></script>
   <script>
-    window.onSpotifyWebPlaybackSDKReady = () => {
-      const token = 'BQDMKI6We1UXGxwEdOTY-v5RimeHzRYrpKhDFAPCCXZyimdbzfy-Slw7j-jetejkB2fAItlSH79iSTfFMTR3xQG--HwbmpIuANUeSuWnV-3uSZwY2rCrnJe-um6a2qqjpXUIsU7asCy_U3yVN2sBWtYQB6022rC5';
+      async function login()
+    {
+     const loginInfo =  {  
+	  "username": "jcorm714",
+	  "password": "PKeK632e"
+        };
+        let url = 'https://api.hooktheory.com/v1/users/auth'
+        const resp = await fetch(url, {
+            method: "POST",
+            headers:{
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(loginInfo)
+        })
+        data = await resp.json();
+        console.log(data)
+        return data;
+    }
+
+    async function search()
+    {
+        data = login();
+        let chords = document.querySelector("#txtSearch").value;
+        chords = chords.split(" ").join(",")
+        debugger;
+        let url = 'https://api.hooktheory.com/v1/trends/songs?cp=4,1'
+        const resp =  await fetch(url, {
+            method: 'GET',
+            headers:{
+                'Content-Type' : 'application/json',
+                'Authorization' : 'Bearer ' + data["activkey"]
+            }
+        })
+        result = await resp.json();
+        console.log(result)
+        return result;
+    }
+    document.querySelector("#btnSearch").addEventListener("click", search)
+  </script>
+  <script>
+
+      let params = new URLSearchParams(window.location.hash);
+     
+
+      window.onSpotifyWebPlaybackSDKReady = () => {
+      debugger;
+      const token = params.get("#access_token");
       const player = new Spotify.Player({
         name: 'Web Playback SDK Quick Start Player',
         getOAuthToken: cb => { cb(token); }
@@ -12,7 +57,12 @@
       
       // Error handling
       player.addListener('initialization_error', ({ message }) => { console.error(message); });
-      player.addListener('authentication_error', ({ message }) => { console.error(message); });
+          player.addListener('authentication_error', ({ message }) => {
+              console.log(message);
+            //alert(message);
+            //window.location.href = "@Url.Action("Index", "Home")"
+        })
+      
       player.addListener('account_error', ({ message }) => { console.error(message); });
       player.addListener('playback_error', ({ message }) => { console.error(message); });
 
@@ -33,3 +83,4 @@
       player.connect();
     };
   </script>
+

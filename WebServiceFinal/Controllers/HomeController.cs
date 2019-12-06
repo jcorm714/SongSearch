@@ -10,27 +10,26 @@ namespace WebServiceFinal.Controllers
 {
     public class HomeController : Controller
     {
+        private struct Options
+        {
+            public const string client_id = "1f6d12d8f0c8489db2623ad1ad05f8ec";
+            public const string redirect_uri = "https://localhost:5001/Home/Callback/";
+            public const string scopes = "streaming user-modify-playback-state user-read-email";
+        }
         public IActionResult Index()
         {
+            
+            ViewData["client_id"] = Options.client_id;
+            ViewData["redirect_uri"] = Options.redirect_uri;
+            ViewData["scopes"] = Options.scopes;
             return View();
         }
 
-        public IActionResult About()
+        
+        public IActionResult Callback()
         {
-            ViewData["Message"] = "Your application description page.";
-
-            return View();
-        }
-
-        public IActionResult Contact()
-        {
-            ViewData["Message"] = "Your contact page.";
-
-            return View();
-        }
-
-        public IActionResult Privacy()
-        {
+            
+            
             return View();
         }
 
