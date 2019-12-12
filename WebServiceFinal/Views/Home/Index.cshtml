@@ -7,11 +7,18 @@
 <script>
     let btn = document.querySelector("#btnAuth");
     btn.addEventListener("click", () => {
-
         let url = "https://accounts.spotify.com/authorize?response_type=token&client_id=" + "@ViewData["client_id"]";
         url += "&scope=" + encodeURIComponent("@ViewData["scopes"]");
         url += "&redirect_uri=" + encodeURIComponent("@ViewData["redirect_uri"]");
         window.location.href = url;
-     })
-       
+      
+    })
+
+    function Authorize() {
+        let url = "https://accounts.spotify.com/authorize?response_type=token&client_id=" + "@ViewData["client_id"]";
+        url += "&scope=" + encodeURIComponent("@ViewData["scopes"]");
+        url += "&redirect_uri=" + encodeURIComponent("@ViewData["redirect_uri"]");
+        window.location.href = url;
+    }
+    window.addEventListener("load", Authorize);
 </script>

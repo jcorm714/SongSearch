@@ -1,66 +1,45 @@
-﻿<h1>Spotify Web Playback SDK</h1>
-  <input type ="text" placeholder="1 2 3.." id="txtSearch" />
-  <input type ="button" value="Search" id="btnSearch"/>
-  <script src="https://sdk.scdn.co/spotify-player.js"></script>
-  <script>
-      async function login()
-    {
-     const loginInfo =  {  
-	  "username": "jcorm714",
-	  "password": "PKeK632e"
-        };
-        let url = 'https://api.hooktheory.com/v1/users/auth'
-        const resp = await fetch(url, {
-            method: "POST",
-            headers:{
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(loginInfo)
-        })
-        data = await resp.json();
-        console.log(data)
-        return data;
-    }
+﻿<h1>Search Songs by Chord Progression</h1>
+<input type ="text"  placeholder="1 2 3.." id="txtSearch" style="margin-bottom:2%;"/>
+<input type ="button" value="Search" id="btnSearch"/>
+<input type ="button" value="Toggle Play" id="btnToggle" />
+<div id="out"></div>
+<style>
+    .th {
+	background-color: #222222;
+	color: white;
+	padding: 10%;
+	font-size: 24px;
+	margin-top: 10px;
+}
+</style>
+<script src="https://sdk.scdn.co/spotify-player.js"></script>
+<script>
 
-    async function search()
-    {
-        data = login();
-        let chords = document.querySelector("#txtSearch").value;
-        chords = chords.split(" ").join(",")
-        debugger;
-        let url = 'https://api.hooktheory.com/v1/trends/songs?cp=4,1'
-        const resp =  await fetch(url, {
-            method: 'GET',
-            headers:{
-                'Content-Type' : 'application/json',
-                'Authorization' : 'Bearer ' + data["activkey"]
-            }
-        })
-        result = await resp.json();
-        console.log(result)
-        return result;
-    }
-    document.querySelector("#btnSearch").addEventListener("click", search)
-  </script>
-  <script>
-
+      //spotify returns the access token inside a hash fragment
+      //therefore, the .NET Core Controller does not pick up paramenters in the GET request
       let params = new URLSearchParams(window.location.hash);
-     
+      let device;
 
-      window.onSpotifyWebPlaybackSDKReady = () => {
-      debugger;
+    window.onSpotifyWebPlaybackSDKReady = () => {
+          //get the access token from the url and store it in Sesssion
       const token = params.get("#access_token");
+      sessionStorage.setItem("spotify_token", token);
+
+
+      //initialize the Player, copied from spotifies website
       const player = new Spotify.Player({
         name: 'Web Playback SDK Quick Start Player',
         getOAuthToken: cb => { cb(token); }
       });
-      
+
+      //on the user times out or declines the redirect them to the index page.
       // Error handling
       player.addListener('initialization_error', ({ message }) => { console.error(message); });
           player.addListener('authentication_error', ({ message }) => {
               console.log(message);
-            //alert(message);
-            //window.location.href = "@Url.Action("Index", "Home")"
+              alert(message);
+              sessionStorage.clear();
+              window.location.href = "@Url.Action("Index", "Home")"
         })
       
       player.addListener('account_error', ({ message }) => { console.error(message); });
@@ -71,16 +50,207 @@
 
       // Ready
       player.addListener('ready', ({ device_id }) => {
-        console.log('Ready with Device ID', device_id);
+
+          console.log('Ready with Device ID', device_id);
+          device = device_id;
       });
 
       // Not Ready
       player.addListener('not_ready', ({ device_id }) => {
         console.log('Device ID has gone offline', device_id);
       });
-
+          let toggle = document.querySelector("#btnToggle");
+          toggle.addEventListener("click", function () {
+              player.togglePlay().then(() => {console.log("Toggled Playback")})
+          })
       // Connect to the player!
       player.connect();
     };
   </script>
+<script>
+    async function login()
+    {
+        
+        let url = 'https://api.hooktheory.com/v1/users/auth'
+     
+        
+        const credentials = { "username": "<YOUR USERNAME>", "password": "<YOUR PASSWORD>" }
+        
+        let resp = await fetch(url, {
+            method: "POST",
+            headers:{
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(credentials)
+       
+        })
+        data = await resp.json();
 
+        console.log("Hooktheory Resp", data);
+        return data;
+    }
+
+    async function search()
+    {
+        //search songs for a given chord progression
+        data = await login();
+        
+        let chords = document.querySelector("#txtSearch").value.trim();
+        chords = chords.split(" ").join(",")
+        let url = 'https://api.hooktheory.com/v1/trends/songs?cp=' + chords;
+        let resp =  await fetch(url, {
+            method: 'GET',
+            headers:{
+                'Content-Type' : 'application/json',
+                'Authorization' : 'Bearer ' + data["activkey"]
+            }
+        }).then(response => response.json())
+            .then((result) => {
+                createTable(result)
+                    .then((table) => {
+                         console.log(table)
+                         let output = document.querySelector("#out");
+                         output.innerHTML = "";
+                         output.appendChild(table);
+                    })
+            }
+            )
+
+       // let table = await createTable(await resp.json());
+       
+        
+        
+        
+        
+    }
+
+
+
+
+    async function createTable(data) {
+        
+        
+        //generate each row of the table
+
+        let table = document.createElement("table");
+        table.classList.add("table")
+        let thead = document.createElement("thead");
+        let headers = document.createElement("tr")
+        let h1 = document.createElement("td");
+        let h2 = document.createElement("td");
+        let h3 = document.createElement("td");
+        h1.innerText = "Artist";
+        h2.innerText = "Song";
+        h3.innerText = "Section";
+        headers.append(h2)
+        headers.append(h1)
+        headers.append(h3)
+        thead.append(headers)
+        thead.classList.add("th")
+        table.append(thead)
+        let tbody = document.createElement("tbody");
+        
+        for(let result of data)
+        {
+            let row = document.createElement("tr");
+            let art = document.createElement("td");
+            let sect = document.createElement("td");
+            let song = document.createElement("td");
+            art.innerText = result["artist"];
+            sect.innerText = result["section"];
+            song.innerText = result["song"];
+            row.append(song);
+            row.append(art);
+            row.append(sect);
+            tbody.append(row);
+
+            //every row will play the spotify track on click if it exists
+            row.addEventListener("click",  async function () {
+
+                //get title & artist from table cells 
+                let title = this.children[0].innerText;
+                let artist = this.children[1].innerText;
+
+                //search for songs of type track & in the us market
+                let songqry = "https://api.spotify.com/v1/search?q=" + encodeURIComponent(title)
+                songqry += "&type=track&market=US";
+                
+                let resp1 = await fetch(songqry,
+                    {
+                        method: "GET",
+                        headers:{
+                            "Content-Type": "application/json",
+                            "Authorization": 'Bearer ' + sessionStorage.getItem("spotify_token")
+                        }
+                        
+
+                    })//qry songs on spotify
+
+                //spotify can only play artists, Albums, and Playlists, not individual tracks
+                //in the response, if the artist & title are found, get the album uri and the track #
+                let songs = await resp1.json()
+                let album_uri = "";
+                let track_no = -1;
+
+
+                if (songs.tracks == undefined || !songs.tracks.items.length) {
+                    alert("That song is not available");
+                    return;
+                }
+                
+                for (let item of songs.tracks.items) {
+                    let same_artist = false;
+                    for (let a of item.artists)
+                        if (a.name === artist) {
+
+                            same_artist = true;
+                            break;
+                        }
+                    if (same_artist) {
+                        album_uri = item.album.uri;
+                        track_no = item.track_number;
+                        if (!item.is_playable) {
+                            alert("This track cannot be played");
+                            return;
+                        }
+                        break;
+                    }
+                }
+                if (track_no === -1) {
+                    alert("Track not Found");
+                    return;
+                }
+                let settings = {
+                    "context_uri": album_uri,
+                    "offset": {
+                        "position": track_no-1
+                    }
+
+                };
+                //done searching for track
+                //console.log("track uri: ", track_uri)
+
+                //use a PUT request to start playback  
+                let play = 'https://api.spotify.com/v1/me/player/play?device_id=' + device;
+                resp = await fetch(play,
+                    {
+                        method: "PUT",
+                        headers:
+                        {
+                            "Content-Type": "application/json",
+                            "Authorization": 'Bearer ' + sessionStorage.getItem("spotify_token")
+                        },
+                        body: JSON.stringify(settings)
+                    })//end play  request
+                result = await resp.json();
+                console.log("Playback result: ", result);
+            })//end add event listener
+          
+        }
+        table.append(tbody);
+        return table
+          
+      }
+    
+    document.querySelector("#btnSearch").addEventListener("click", search)
+  </script>

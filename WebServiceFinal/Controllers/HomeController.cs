@@ -12,8 +12,9 @@ namespace WebServiceFinal.Controllers
     {
         private struct Options
         {
-            public const string client_id = "1f6d12d8f0c8489db2623ad1ad05f8ec";
-            public const string redirect_uri = "https://localhost:5001/Home/Callback/";
+            public const string client_id = "<YOUR CLIENT ID>";
+            //callback address is defined on your app settings on developer.spotify.com
+            public const string redirect_uri = "https://localhost:5001/Home/Callback/"; 
             public const string scopes = "streaming user-modify-playback-state user-read-email";
         }
         public IActionResult Index()
